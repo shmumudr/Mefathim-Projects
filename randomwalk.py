@@ -37,6 +37,7 @@ class RandomWalk:
         ax.scatter(x, y, z)
         plt.show()
 
+steps = int(input("bla bla bla: "))
 
 r = RandomWalk(10, 3)
 r.walk()
