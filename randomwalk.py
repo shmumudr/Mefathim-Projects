@@ -35,11 +35,11 @@ class RandomWalk:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(x, y, z)
+        plt.plot(x, y, z)
         plt.show()
 
-steps = int(input("bla bla bla: "))
 
-r = RandomWalk(10, 3)
+r = RandomWalk(30, 3)
 r.walk()
 r.display()
 
