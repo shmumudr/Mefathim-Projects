@@ -11,31 +11,6 @@ Usage:
 2. The script will then scrape images from that Wikipedia page and save them in a directory.
 3. It will also follow random links from the page and continue the process up to a specified depth.
 
-Dependencies:
--------------
-- `sys`, `requests`, `BeautifulSoup`: Required libraries for web scraping.
-- `random`: Used for random sampling of links and images.
-- `urllib.parse`: Used for cleaning URLs and generating valid file names.
-- `os`: Used for creating directories.
-
-Variables:
-----------
-- `USER_INPUT`: Input from the user to specify the Wikipedia page title.
-- `PATH`: The URL of the Wikipedia page to start scraping.
-- `PATH_OF_DIRECTORY`: The directory where images will be saved.
-- `max_images_from_one_page`: Maximum number of images to download from a single Wikipedia page.
-
-Functions:
-----------
-- `crawl_wikipedia(url, directory, depth, width, visited_links)`: Recursively crawls Wikipedia pages,
-extracts and saves images, and follows random links.
-- `download_image(url, name, directory)`: Downloads an image from a URL and saves it in the specified directory.
-- `find_image_links(soup)`: Finds and returns image links from the given BeautifulSoup object.
-- `get_title(soup)`: Extracts and returns the title of a Wikipedia page from the BeautifulSoup object.
-- `image_name_from_url(url)`: Generates a valid file name for an image based on its URL.
-- `find_random_url_links(url, soup, visited_links, width)`: Finds random Wikipedia page links
-- 'from the given BeautifulSoup object.
-- `create_soup(url)`: Fetches a web page, parses its HTML, and returns a BeautifulSoup object.
 
 Main Execution:
 ---------------
@@ -50,8 +25,8 @@ Usage Notes:
 
 Note:
 -----
-- You can customize the script by modifying the `max_images_from_one_page`, `width`, and `depth`
-- variables to suit your scraping needs.
+- You can customize the script by modifying the `width`, and `depth`
+- variables to suit your scraping needs. enter this values in terminal
 """
 
 import sys
@@ -61,13 +36,14 @@ import random
 import urllib.parse
 import os
 from random import sample
+import sys
 
-USER_INPUT = input("please enter wikipedia value: ")
-PATH = 'https://en.wikipedia.org/wiki/' + USER_INPUT
-PATH_OF_DIRECTORY = '/home/mefathim/PycharmProjects/pythonProject'
-max_images_from_one_page = 21
+USER_INPUT = input("please enter wikipedia value: ") # Input from the user to specify the Wikipedia page title.
+PATH = 'https://en.wikipedia.org/wiki/' + USER_INPUT # The URL of the Wikipedia page to start scraping.
+PATH_OF_DIRECTORY = '/home/mefathim/PycharmProjects/pythonProject/wikipedia_test' # where images will be saved.
+max_images_from_one_page = 5 # Maximum number of images to download from a single Wikipedia page.
 
-
+# Recursively crawls Wikipedia pages, extracts and saves images, and follows random links.
 def crawl_wikipedia(url, directory, depth, width, visited_links):
     soup = (create_soup(url))
     image_links = find_image_links(soup)
@@ -81,19 +57,17 @@ def crawl_wikipedia(url, directory, depth, width, visited_links):
         image_name = image_name_from_url(link)
         download_image(link, image_name, current_directory)
     if depth > 0:
-        # links = find_random_url_links(soup, visited_links, width)
         links = find_random_url_links(url, soup, visited_links, width)
 
         for link in links:
             crawl_wikipedia(link, directory, depth - 1, width, visited_links)
 
 
-# recive image's url and download the image
+# downloads an image from a URL and saves it in the specified directory.
 def download_image(url, name, directory):
     response = requests.get(url)
     try:
         if response.status_code == 200:
-            # path = f"{directory}/{name}"
             path = f"{directory}/{urllib.parse.quote(name)}"
 
             with open(path, 'wb') as file:
@@ -101,12 +75,12 @@ def download_image(url, name, directory):
     except:
         return
 
-
-
+# finds and returns image links from the given BeautifulSoup object
 def find_image_links(soup):
     all_links = soup.find_all('img', class_='mw-file-element')
 
     correct_links = [i.get('src') for i in all_links]
+    correct_links = random.sample(correct_links, min(len(correct_links), max_images_from_one_page))
     for link in range(len(correct_links)):
         if correct_links[link].startswith('//'):
             correct_links[link] = 'https:' + correct_links[link]
@@ -114,14 +88,14 @@ def find_image_links(soup):
             correct_links[link] = 'https:/' + correct_links[link]
     return correct_links
 
-
+# extracts and returns the title of a Wikipedia page from the BeautifulSoup object.
 def get_title(soup):
     title = soup.title
     title_str = title.string
     title_name = title_str.split()[0]
     return title_name
 
-
+# Generates a valid file name for an image based on its URL.
 def image_name_from_url(url):
     name = url.rsplit("/", 1)[-1]
     if len(name) <= 20:
@@ -129,22 +103,24 @@ def image_name_from_url(url):
     else:
         return name[-20:]
 
-
+# Finds random Wikipedia page links from the given BeautifulSoup object.
 def find_random_url_links(url, soup, visited_links, width):
     all_links = set()
     for link in soup.find_all('a', href=True):
         reference = (link.get('href'))
+
         wiki_prefix = reference.startswith('/wiki')
         not_special_page = ':' not in reference
         not_yet_visited = reference not in visited_links
         reference = urllib.parse.urljoin(url, reference)
+
         if wiki_prefix and not_special_page and not_yet_visited:
             all_links.add(reference)
     randomly_links = random.sample(list(all_links), min(len(list(all_links)), width))
 
     return randomly_links
 
-
+# Fetches a web page, parses its HTML, and returns a BeautifulSoup object.
 def create_soup(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -154,13 +130,13 @@ def create_soup(url):
 
 
 def main():
-    width = 5
-    depth = 3
+    if len(sys.argv) == 3:
+        width = int(sys.argv[1])
+        depth = int(sys.argv[2])
+
     visited_links = set()
     crawl_wikipedia(PATH, PATH_OF_DIRECTORY, depth, width, visited_links)
 
 
 if __name__ == "__main__":
     main()
-
-
